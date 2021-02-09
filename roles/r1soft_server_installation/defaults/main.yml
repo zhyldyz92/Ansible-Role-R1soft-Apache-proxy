@@ -1,0 +1,5 @@
+---
+r1soft_username: username
+r1soft_password: password
+http_port: 8080
+r1soft_port: 1167

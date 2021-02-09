@@ -1,0 +1,56 @@
+---
+- name: add r1soft repository
+  yum_repository:
+    name: r1soft
+    description: R1Soft Repository Server
+    baseurl: http://repo.r1soft.com/yum/stable/$basearch/
+    enabled: yes
+    gpgcheck: no
+
+- name: install r1soft server
+  yum:
+    name: r1soft-cdp-enterprise-server
+    state: present
+  
+
+- name: setup username and password
+  command: "serverbackup-setup --user {{ r1soft_username  }} --pass {{ r1soft_password }} --http-port {{ http_port }}"
+  args:
+    creates: /usr/sbin/r1soft/conf/.user_set
+  notify:
+    - restart cdp-server
+    - wait for r1soft to start up
+    - wait 5 more seconds for r1soft to bootstrap
+
+- name: Restart r1soft
+  command: "/etc/init.d/cdp-server restart"
+
+- name: install pip
+  yum:
+    name: python-pip
+    state: present
+
+- name: install zeep (dependency for r1soft modules)
+  pip:
+    name: zeep
+
+- meta: flush_handlers
+
+# - name: setup volumes
+#   r1soft_volume:
+#     username: "{{ r1soft_username }}"
+#     password: "{{ r1soft_password }}"
+#     name: "{{ item.name }}"
+#     description: "{{ item.description }}"
+#     path: "{{ item.path }}"
+#   with_items: "{{ r1soft_volumes }}"
+
+# - name: setup agents
+#   r1soft_agent:
+#     username: "{{ r1soft_username }}"
+#     password: "{{ r1soft_password }}"
+#     hostname: "{{ item.hostname }}"
+#     port: "{{ item.port | default(1167) }}"
+#     description: "{{ item.description }}"
+#   with_items: "{{ r1soft_agents }}"
+ 

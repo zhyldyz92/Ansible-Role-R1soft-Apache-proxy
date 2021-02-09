@@ -1,0 +1,120 @@
+---
+- name: add r1soft repository
+  yum_repository:
+    name: r1soft
+    description: R1Soft Repository Server
+    baseurl: http://repo.r1soft.com/yum/stable/$basearch/
+    enabled: yes
+    gpgcheck: no
+
+- name: install pip
+  yum:
+    name: python-pip
+    state: present
+
+
+- name: install zeep (dependency for r1soft modules)
+  pip:
+    name: zeep
+
+# - name: Copy repo to remote system  
+#   when: ansible_os_family == "RedHat"
+#   copy:
+#     src: /etc/yum.repos.d/r1soft.repo
+#     dest: /etc/yum.repos.d/r1soft.repo
+
+
+- name: Install r1soft agent
+  when: ansible_os_family == "RedHat"
+  yum: 
+    name: 
+    - serverbackup-enterprise-agent  
+    - kernel-devel
+    - kernel-headers
+
+
+
+- name: Start r1soft agent 
+  when: ansible_distribution_major_version == "7"   
+  command: "/etc/init.d/cdp-agent start"     
+
+
+
+# # - name: Start r1soft on centos 6 
+# #   when: ansible_distribution_major_version == "6"
+# #   service:
+# #     name: cdp-agent
+# #     state: restarted
+# #     enabled: yes
+
+
+- name: Get key from server
+  command: "r1soft-setup --get-key   http://68.183.136.196:8080" 
+
+
+- name: Open port for 1167 on centos 7 
+  when: ansible_distribution_major_version == "7"
+  firewalld:
+    port: 1167/tcp
+    permanent: true
+    state: present
+  ignore_errors: true
+
+- name: sync pkg version with repo
+  command: "yum distro-sync -y"
+
+- name: Restart server
+  command: /sbin/shutdown -r +1
+  async: 0
+  poll: 0
+  ignore_errors: true
+
+
+
+
+
+# - name: Install r1soft agent on Debian Family
+#   when: ansible_os_family == "Debian"
+#   command:  echo deb http://repo.r1soft.com/apt stable main >> /etc/apt/sources.list
+
+# - name: Install r1soft agent on Debian Family
+#   when: ansible_os_family == "Debian"
+#   get_url: 
+#     url: http://repo.r1soft.com/r1soft.asc
+#     dest: /tmp/r1soft.asc
+
+
+# - name: Install r1soft agent on Debian Family
+#   when: ansible_os_family == "Debian"
+#   command: apt-key add /tmp/r1soft.asc 
+
+# - name: Install r1soft agent on Debian Family
+#   when: ansible_os_family == "Debian"
+#   package: 
+#     name: "*" 
+#     state: latest
+#     force_apt_get: True
+
+
+
+# - name: Install r1soft agent on Debian Family
+#   when: ansible_os_family == "Debian"
+#   package: 
+#     name: serverbackup-enterprise-agent 
+
+
+# - name: Get key from server
+#   when: ansible_os_family == "Debian"
+#   command: "r1soft-setup --get-key   http://68.183.136.196:8080" 
+
+
+
+# - name: Allow incoming access to eth0 from 68.183.136.196 port 1167 
+#   when: ansible_os_family == "Debian"
+#   ufw:
+#     rule: allow
+#     direction: in
+#     proto: tcp
+#     src: 68.183.136.196
+#     from_port: 1167
+#     to_port: 1167

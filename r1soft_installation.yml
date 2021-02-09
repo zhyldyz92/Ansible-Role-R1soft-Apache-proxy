@@ -1,0 +1,66 @@
+- hosts: all
+  tasks:
+  - name: install Prerequisites
+    import_role:
+      name: r1soft-prerequisites
+
+- hosts: r1soft-server
+  tasks:
+  - name: Install R1soft-Server
+    import_role:
+      name: r1soft_server_installation
+
+- hosts: r1soft_agent
+  tasks:
+  - name:  Install R1soft Agents
+    import_role:
+      name: r1soft_agent_installation
+
+
+- hosts: all
+  become: yes
+
+  vars:
+    apache_create_vhosts: false
+    apache_remove_default_vhost: true
+    certbot_admin_email: "zhyldyzalova@gmail.com"
+    certbot_create_if_missing: true
+    certbot_create_standalone_stop_services:
+    - httpd
+    certbot_certs:
+    - domains:
+      - "r1soft.awstask1.com"
+    apache_server_name: "r1soft.awstask1.com"
+    apache_default_admin_email: "zhyldyzalova@gmail.com"
+    apache_copy_ssl_files: false
+    apache_ssl_cert_file_location: "/etc/letsencrypt/live/{{ apache_server_name }}/fullchain.pem"
+    apache_ssl_cert_key_location: "/etc/letsencrypt/live/{{ apache_server_name }}/privkey.pem"
+    apache_proxy_host: "localhost"
+    apache_proxy_port: 8080
+    default_context_path: "/"
+
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: true
+        cache_valid_time: 600
+      when: ansible_os_family == 'Debian'
+      changed_when: false
+    
+    - name: Install cron (Debian)
+      apt:
+        name: cron
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Install dependencies (RedHat)
+      yum:
+        name:
+        - cronie
+        - epel-release
+      when: ansible_os_family == 'RedHat'
+      
+  roles:
+    - ansible-role-apache
+    - ansible-role-certbot
+    - ansible-role-apache-proxy     

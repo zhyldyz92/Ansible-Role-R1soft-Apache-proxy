@@ -1,0 +1,5 @@
+[r1soft-server]
+r1soft-server ansible_host=68.183.136.196
+
+[r1soft-agent]
+r1soft-agent ansible_host=206.189.231.146
